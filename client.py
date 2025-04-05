@@ -1,17 +1,30 @@
 import socket
 import threading
-import json
 import sys
 
 from chatui import init_windows, read_command, print_message, end_windows
+from json_handling import encode_packet, get_next_packet
 
 
 def usage():
     print("usage: python client.py username address port")
 
 
-def print_messages():
-    pass
+def print_messages(sock):
+    buffer = b""
+
+    while True:
+        buffer += sock.recv(10)
+        next_packet = get_next_packet(buffer)
+
+        if next_packet:
+            payload, new_buffer = next_packet
+            buffer = new_buffer
+
+            if payload["type"] == "join":
+                print_message(f"** {payload["username"]} joins!")
+            elif payload["type"] == "chat":
+                print_message(f"{payload["username"]}: {payload["message"]}")
 
 
 def main(username, address, port):
@@ -20,18 +33,22 @@ def main(username, address, port):
     s = socket.socket()
     s.connect((address, port))
 
-    chat_thread = threading.Thread(target=print_messages)
+    s.sendall(encode_packet({"type": "join", "username": username}))
+
+    chat_thread = threading.Thread(target=print_messages, args=(s,))
     chat_thread.start()
 
     while True:
-        s = read_command()
+        message = read_command()
 
-        if s == "/q":
+        if message == "/q":
+            s.sendall(encode_packet({"type": "leave"}))
             break
 
-        print_message(f"Me: {s}")
+        s.sendall(encode_packet({"type": "chat", "message": message}))
 
     chat_thread.join()
+    s.close()
     end_windows()
 
 
