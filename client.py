@@ -22,9 +22,11 @@ def print_messages(sock):
             buffer = new_buffer
 
             if payload["type"] == "join":
-                print_message(f"** {payload["username"]} joins!")
+                print_message(f"** {payload["username"]} joins")
             elif payload["type"] == "chat":
                 print_message(f"{payload["username"]}: {payload["message"]}")
+            elif payload["type"] == "leave":
+                print_message(f"-- {payload["username"]} left")
 
 
 def main(username, address, port):
