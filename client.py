@@ -14,7 +14,11 @@ def print_messages(sock):
     buffer = b""
 
     while True:
-        buffer += sock.recv(10)
+        data = sock.recv(10)
+        if not data:
+            break
+
+        buffer += data
         next_packet = get_next_packet(buffer)
 
         if next_packet:

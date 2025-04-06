@@ -10,12 +10,12 @@ def usage():
 
 
 def print_logs(payload, username):
-    print(payload if payload["type"] != "join" else {**payload, "username": username})
+    print(payload if payload["type"] == "join" else {**payload, "username": username})
 
 
 def main(port):
     s = socket.socket()
-    s.bind(("localhost", port))
+    s.bind(("0.0.0.0", port))
     s.listen()
 
     socks = {s}
@@ -61,14 +61,19 @@ def main(port):
                     elif payload["type"] == "leave":
                         left = True
                         for all_sock in sock_data.keys():
-                            all_sock.sendall(
-                                encode_packet(
-                                    {**payload, "username": sock_data[sock]["username"]}
+                            if sock is not all_sock:
+                                all_sock.sendall(
+                                    encode_packet(
+                                        {
+                                            **payload,
+                                            "username": sock_data[sock]["username"],
+                                        }
+                                    )
                                 )
-                            )
 
                 if len(data) == 0 or left:
                     socks.remove(sock)
+                    sock.close()
                     del sock_data[sock]
 
 
